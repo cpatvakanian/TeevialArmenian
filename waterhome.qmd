@@ -1,0 +1,287 @@
+---
+title: "Water in The Home"
+---
+
+The survey showed that most students (80.9%) do have access to piped water at home, and the majority did not apply any treatment to make that water safe. For those that did use treatments, 42% reported the primary method was boiling.
+
+```{r setup3, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# library(tidyverse)
+# library(ggplot2)
+# library(dplyr)
+# library(extrafont)
+# library(showtext)
+
+#install.packages("showtext")
+#install.packages("sysfonts")
+
+library(showtext)
+library(sysfonts)
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(showtext)
+library(sysfonts)
+
+# Reset and re-add lato
+font_families()  # Check if lato is already registered
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(dplyr)
+library(treemap)
+library(cowplot)  # For combining plots
+library(grid)  # To add custom text
+
+library(ggplot2)
+library(dplyr)
+library(ggimage)
+
+```
+
+```{r reading_data3, include = FALSE, echo=FALSE}
+
+library(readxl)
+
+# Read in the data
+data <- read_excel("Teevial_Translated (1).xlsx")
+
+# Remove periods from all character columns
+data[] <- lapply(data, function(x) if (is.character(x)) gsub("\\.", "", x) else x)
+
+# Standardize "insufficient government support" regardless of case and placement
+data[] <- lapply(data, function(x) if (is.character(x)) 
+  gsub("(,?\\s*)insufficient government support", "\\1Insufficient government support", x, ignore.case = TRUE) else x)
+
+# Convert blanks or spaces-only values to NA
+data[] <- lapply(data, function(x) if (is.character(x)) na_if(trimws(x), "") else x)
+
+# Ensure that all empty values are NA explicitly
+data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_character_, x) else x)
+
+
+
+```
+
+```{r homewater1, echo=FALSE, warning=FALSE}
+
+
+# Sample size from actual data
+sample_size <- nrow(data)
+
+# Summarize data
+data_summary <- data %>%
+  group_by(`What is the main source of water for you and your household?`) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))
+
+# Maintain factor levels for order
+data_summary$`What is the main source of water for you and your household?` <- 
+  factor(data_summary$`What is the main source of water for you and your household?`, 
+         levels = data_summary$`What is the main source of water for you and your household?`)
+
+# Define droplet image URL
+droplet_img <- "https://labs.waterdata.usgs.gov/visualizations/23_chart_challenge/raindrop.png"
+
+# **Even Smaller Scaling: Cubic Root Function**
+min_size <- 0.025  # Smallest droplets get **even smaller**
+max_size <- 0.4  # Keep the biggest droplet size the same
+data_summary <- data_summary %>%
+  mutate(droplet_size = scales::rescale(count^(1/3), to = c(min_size, max_size)))  # **Cubic root for more contrast**
+
+# **Better droplet placement to prevent cutoff**
+y_base <- 1.5   # Higher base lift
+y_scale <- 2.2  # Increased spread for visual balance
+data_summary <- data_summary %>%
+  mutate(y_position = pmax(y_base, y_base + (droplet_size * y_scale)))  
+
+# **Ensure labels stay above droplets**
+label_offset <- 0.25  # More spacing above droplets
+data_summary <- data_summary %>%
+  mutate(label_position = y_position + (droplet_size * 2) + label_offset)
+
+# Create droplet-based bar chart
+watersource_plot <- ggplot(data_summary, 
+                           aes(x = `What is the main source of water for you and your household?`, 
+                               y = count)) +
+
+  # Single droplet per category, positioned and sized dynamically
+  ggimage::geom_image(aes(y = y_position, image = droplet_img, size = I(droplet_size)), 
+                      asp = 1.0) +  
+
+  # Percentage labels, always positioned above droplets
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), y = label_position), 
+            size = 7, fontface = "bold") +
+
+  # Adjust y-axis limits and remove extra spacing
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
+
+  # Labels and title
+  labs(title = "Main Water Source",
+       x = "Water Source", 
+       y = NULL,
+       caption = paste("Sample Size:", sample_size)) +
+
+  # Custom theme adjustments
+  theme_minimal() +
+  theme(
+    text = element_text(family = "lato"),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 15),
+    axis.text.y = element_blank(),  
+    plot.title = element_text(hjust = 0.5, face = "bold", family = "lato", size = 20),
+    axis.title.x = element_text(size = 15),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line.x = element_line(color = "black", size = 1),
+    plot.caption = element_text(vjust = 4, size = 10)
+  )
+
+# Save as image
+watersource_plot
+
+
+
+```
+
+```{r homewater2, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+sample_size <- nrow(data)  # Calculate the sample size dynamically
+
+# Function to insert line breaks after every second word
+insert_line_breaks <- function(text, n = 2) {
+  words <- unlist(strsplit(text, " "))  # Split text into words
+  if (length(words) > n) {
+    text <- paste(words, collapse = " ")  # Reconstruct with spaces
+    text <- gsub(paste0("((\\S+\\s+){", n, "})"), "\\1\n", text, perl = TRUE)  # Insert line breaks
+  }
+  return(text)
+}
+
+# Calculate the count and percentage of each treatment method
+data_summary <- data %>%
+  group_by(`If you answered "Yes" to the previous question, what methods do you use to treat water?`) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))  # Sort by count in descending order
+
+# Apply line breaks to long variable names
+data_summary$`If you answered "Yes" to the previous question, what methods do you use to treat water?` <- 
+  sapply(data_summary$`If you answered "Yes" to the previous question, what methods do you use to treat water?`, insert_line_breaks)
+
+# Make the treatment method column a factor to control the order
+data_summary$`If you answered "Yes" to the previous question, what methods do you use to treat water?` <- 
+  factor(data_summary$`If you answered "Yes" to the previous question, what methods do you use to treat water?`, 
+         levels = data_summary$`If you answered "Yes" to the previous question, what methods do you use to treat water?`)
+
+# Create the bar chart with more vertical space
+treatmenttype <- ggplot(data_summary, aes(x = `If you answered "Yes" to the previous question, what methods do you use to treat water?`, y = count)) +
+  geom_bar(stat = "identity", fill = "#0073C2FF", alpha = 0.8) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), vjust = -0.75, size = 7, fontface = "bold") +  # Increased text size
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +  # Adds 15% extra space on top
+  theme_minimal() +
+  labs(title = "Water Treatment Methods",
+       x = "Treatment Type", 
+       y = "Count",
+       caption = paste("Sample Size:", sample_size)) +
+  theme(
+    text = element_text(family = "lato"),  
+    axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5, size = 15),  
+    axis.text.y = element_text(size = 20),  
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20, family = "lato"),  
+    axis.title.x = element_text(size = 15),  
+    axis.title.y = element_text(size = 15),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    axis.line = element_line(color = "black", size = 1),  
+    plot.caption = element_text(vjust = 4, size = 10),  
+    plot.tag = element_text(size = 10),
+    plot.tag.position = c(0.89, 0)
+  )
+
+# Save the graphic for thesis insertion
+ggsave(file = "treatmenttype.jpeg", treatmenttype, width = 10, height = 10, dpi = 300)
+
+treatmenttype
+
+
+
+```
+
+Over the course of the past 5 years, 68% of students thought the cleanliness of drinking water had stayed the same and 25% reported that it improved. As a whole, the overwhelming majority of students had a positive perception of their home water quality and safety, which is a positive sign.
+
+```{r homewater3, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+sample_size <- nrow(data)  # Calculate sample size dynamically
+
+# Column containing responses
+col_question <- "In your opinion, has the cleanliness or safety of your home's water improved, worsened, or remained about the same over the past 5 years?"
+
+# Aggregate response counts
+data_summary <- data %>%
+  group_by(response_category = !!sym(col_question)) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  ungroup()
+
+# Define perception categories
+data_summary$response_type <- case_when(
+  data_summary$response_category == "It has improved" ~ "positive",
+  data_summary$response_category == "It has gotten worse" ~ "negative",
+  TRUE ~ "neutral"
+)
+
+# Sort responses logically
+data_summary <- data_summary %>%
+  arrange(match(response_category, c("It has gotten worse", "It is the same", "I don't know, I have no opinion", "It has improved")))
+
+# Convert to factor for correct order
+data_summary$response_category <- factor(data_summary$response_category, levels = data_summary$response_category)
+
+# Diverging bar chart with lato font and updated styling
+water_perception <- ggplot(data_summary, aes(x = response_category, y = count, fill = response_type)) + 
+  geom_bar(stat = "identity", width = 0.7, alpha = 0.8) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), 
+            size = 5, fontface = "bold", family = "lato", color = "black", 
+            hjust = -0.1) +  # Puts percent labels to the right of bars
+  scale_fill_manual(values = c(
+    "positive" = "#00ba38",  # Green for improvement
+    "negative" = "#f8766d",  # Red for worse
+    "neutral" = "#619CFF"    # Blue for neutral
+  ), guide = "none") +  # Remove legend
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +  # Adds 15% extra space on top
+  coord_flip() + 
+  theme_minimal() +
+  labs(title = "Perceived Changes in\nHome Water Cleanliness & Safety",
+       x = "Response Category",
+       y = "Count",
+       caption = paste("Sample Size:", sample_size)) + 
+  theme(
+    text = element_text(family = "lato"),  
+    axis.text.x = element_text(size = 15),  
+    axis.text.y = element_text(size = 12),  
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20,family = "lato"),  
+    axis.title.x = element_text(size = 15),  
+    axis.title.y = element_blank(),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    axis.line = element_line(color = "black", size = 1),  
+    plot.caption = element_text(vjust = 4, size = 10),  
+    plot.tag = element_text(size = 5),
+    plot.tag.position = c(0.89, 0)
+  )
+
+# Save the graphic for thesis insertion
+ggsave(file = "water_perception.jpeg", water_perception, width = 10, height = 10, dpi = 300)
+
+water_perception
+
+
+```

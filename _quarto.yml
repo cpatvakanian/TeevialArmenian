@@ -1,0 +1,23 @@
+project:
+  type: website
+
+website:
+  navbar:
+    logo: "teevial.svg"
+    left:
+      - href: index.qmd
+        text: Introduction
+      - demographics.qmd
+      - waterhome.qmd
+      - waternature.qmd
+      - interests.qmd
+
+format:
+  html:
+    theme: cosmo
+      - fonts.css  # Custom font stylesheet
+    css: styles.css
+    toc: false
+
+
+

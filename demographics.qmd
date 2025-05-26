@@ -1,0 +1,292 @@
+---
+title: "Demographics"
+---
+The total sample size of participants was 47 out of roughly 60 students who were in the target age/grade range for our pilot project. 
+
+With this group, we’re about 80% sure that our results are accurate within 5% of what we would find if every eligible student had participated, based on a [standard sample size calculation](https://www.calculator.net/sample-size-calculator.html?type=1&cl=80&ci=5&pp=47&ps=60&x=Calculate).
+
+For the purpose of a pilot project, we found this sample to be sufficient for our initial exploratory objective to have a rough understanding of the youth’s perception and sentiment of water quality.
+
+### Age
+
+The students who were surveyed in the high school ranged from grades 9-12, and their age spanned from 14 to 18 years old.
+
+```{r setup2, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(extrafont)
+library(showtext)
+
+#install.packages("showtext")
+#install.packages("sysfonts")
+
+library(showtext)
+library(sysfonts)
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(showtext)
+library(sysfonts)
+
+# Reset and re-add lato
+font_families()  # Check if lato is already registered
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(dplyr)
+library(treemap)
+library(cowplot)  # For combining plots
+library(grid)  # To add custom text
+
+```
+
+```{r reading_data2, include = FALSE, echo=FALSE}
+
+library(readxl)
+
+# Read in the data
+data <- read_excel("Teevial_Translated (1).xlsx")
+
+# Remove periods from all character columns
+data[] <- lapply(data, function(x) if (is.character(x)) gsub("\\.", "", x) else x)
+
+# Standardize "insufficient government support" regardless of case and placement
+data[] <- lapply(data, function(x) if (is.character(x)) 
+  gsub("(,?\\s*)insufficient government support", "\\1Insufficient government support", x, ignore.case = TRUE) else x)
+
+# Convert blanks or spaces-only values to NA
+data[] <- lapply(data, function(x) if (is.character(x)) na_if(trimws(x), "") else x)
+
+# Ensure that all empty values are NA explicitly
+data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_character_, x) else x)
+
+
+
+```
+
+```{r age2, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+sample_size <- 47  # Calculate the sample size
+
+## Age
+
+# Calculate the count and percentage of each age value
+data_summary_age <- data %>%
+  group_by(Age) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))  # Sort by count in descending order
+
+# Make the Age column a factor to control the order
+data_summary_age$Age <- 
+  factor(data_summary_age$Age, 
+         levels = data_summary_age$Age)
+
+# Create the bar chart with percentages on top
+# Update title, percentage label, and axis sizes
+chart <- ggplot(data_summary_age, aes(x = Age, y = count)) +
+  geom_bar(stat = "identity", fill = "#0073C2FF", alpha = 0.8) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), vjust = -0.75, size = 5, fontface = "bold") +  # Increased percentage label size
+  theme_minimal() +
+  labs(title = "Respondent Age Distribution",
+       x = "Age", 
+       y = "Count") +
+  ylim(0, max(data_summary_age$count) * 1.1) +  # Add more headroom above bars
+  theme(
+    text = element_text(family = "lato"),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 15),  # Increased x-axis text size
+    axis.text.y = element_text(size = 15),  # Increased y-axis text size
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20),  # Increased title size
+    axis.title.x = element_text(size = 15),  # Increased x-axis title size
+    axis.title.y = element_text(size = 15),  # Increased y-axis title size
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black", size = 1)  # Made axis lines thicker
+  ) +
+  labs(caption = paste("Sample Size:", sample_size)) +
+  theme(
+    plot.caption = element_text(vjust = 4, size = 10),
+    plot.tag = element_text(size = 10),
+    plot.tag.position = c(0.89, 0)
+  )
+
+# Save the chart
+ggsave("age.jpeg", plot = chart, width = 10, height = 7, dpi = 300)
+
+chart
+```
+
+### Location
+Most all participants were from Gyulagarak, with the exception of 2 students that commuted from the nearby villages of Pushkino and Hobartsi. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(extrafont)
+library(showtext)
+
+#install.packages("showtext")
+#install.packages("sysfonts")
+
+library(showtext)
+library(sysfonts)
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(showtext)
+library(sysfonts)
+
+# Reset and re-add lato
+font_families()  # Check if lato is already registered
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(dplyr)
+library(treemap)
+library(cowplot)  # For combining plots
+library(grid)  # To add custom text
+
+```
+
+```{r reading_data, include = FALSE}
+
+library(readxl)
+
+# Read in the data
+data <- read_excel("Teevial_Translated (1).xlsx")
+
+# Remove periods from all character columns
+data[] <- lapply(data, function(x) if (is.character(x)) gsub("\\.", "", x) else x)
+
+# Standardize "insufficient government support" regardless of case and placement
+data[] <- lapply(data, function(x) if (is.character(x)) 
+  gsub("(,?\\s*)insufficient government support", "\\1Insufficient government support", x, ignore.case = TRUE) else x)
+
+# Convert blanks or spaces-only values to NA
+data[] <- lapply(data, function(x) if (is.character(x)) na_if(trimws(x), "") else x)
+
+# Ensure that all empty values are NA explicitly
+data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_character_, x) else x)
+
+
+
+```
+
+
+```{r location_treeplot, echo = FALSE}
+
+# Summarize the data to count occurrences of each location
+data_filtered <- data %>%
+  group_by(Location) %>%
+  summarise(count = n())  # Count the occurrences of each location
+
+# Calculate percentage for each location
+data_filtered <- data_filtered %>%
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Create a label column, putting percentage directly next to the number (no commas)
+data_filtered$label <- paste(data_filtered$Location, 
+                             round(data_filtered$percentage, 1), "%", sep = " ")
+
+# Creating the actual treemap with your data
+library(treemap)
+library(grid)
+
+treemap_chart <- treemap(data_filtered,
+                         index = "label",
+                         vSize = "count",
+                         vColor = "percentage",
+                         type = "index",
+                         palette = "Pastel1",
+                         border.col = "black",
+                         border.lwds = 1,
+                         fontsize.labels = 6,
+                         fontcolor.labels = "black",
+                         fontface.labels = 1,
+                         bg.labels = "transparent",
+                         align.labels = c("center", "center"),
+                         overlap.labels = 0.5,
+                         inflate.labels = TRUE,
+                         lowerbound.cex.labels = .1,
+                         minSize = 75,
+                         
+                         # Remove automatic title completely
+                         title = "",  
+                         
+                         # Adjust treemap placement to leave more room for title
+                         vp = viewport(y = 0.50, height = 0.80)  
+)
+
+# Add a large custom title manually (shifted lower)
+grid.text("Participant Locations", 
+          x = 0.5, y = 0.96,  # Move it slightly lower to avoid cutting off
+          gp = gpar(fontsize = 22, fontface = "bold"))  # Keep the title bold
+
+```
+### Gender
+
+The balance of gender in our sample is slightly skewed, with 55% of our respondents being female.
+```{r gender, echo = FALSE, include=FALSE}
+# Load the required packages
+library(scales)
+library(ggplot2)
+library(dplyr)
+
+count.data <- data.frame(
+  class = c("Female", "Male"),
+  n = c(26, 21),
+  prop = c(55.3, 44.7)
+)
+
+# Adjusting the count data to display proportions of total firms per group
+count.data <- count.data %>%
+  arrange(desc(class)) %>%
+  mutate(lab.ypos = cumsum(prop) - 0.5 * prop)
+
+# Creating the actual pie chart with specifications
+gender <- ggplot(count.data, aes(x = "", y = prop, fill = class)) +
+  geom_bar(width = 1, stat = "identity", color = "white", size = 5) +
+  coord_polar("y", start = 0) +
+  geom_text(aes(y = lab.ypos, label = percent(prop / 100)), 
+            color = "white", 
+            size = 7) +  # Increased label size
+  theme_void() +
+  labs(
+    title = "Gender Distribution",  # Title added at the top
+    caption = "Sample Size: 47"
+  ) +
+  scale_fill_manual(values = c("Female" = "#FF69B4", "Male" = "#0073C2FF")) +  # Custom colors
+  theme(
+    text = element_text(size = 15, family = "lato"),
+    plot.caption = element_text(size = 15, hjust = 1),  # Increase caption size
+    plot.title = element_text(size = 20, face = "bold", hjust = 0.5),  # Bigger title
+    legend.position = "right",  # Position legend on the right
+    legend.title = element_blank(),  # Remove the legend title
+    legend.text = element_text(size = 15)  # Bigger legend labels
+  )
+
+# Saving the graphic
+ggsave(file = "gender.jpg", gender, width = 8, height = 6, dpi = 300)
+
+
+```
+
+```{r graphic, echo = FALSE}
+gender
+```
+
+
+
+

@@ -1,0 +1,372 @@
+---
+title: "Water in Nature"
+---
+
+With regard to natural water, almost all the students reported spending at least two days a week outside, and the most frequently encountered source of water was “River”.
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(extrafont)
+library(showtext)
+
+#install.packages("showtext")
+#install.packages("sysfonts")
+
+library(showtext)
+library(sysfonts)
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(showtext)
+library(sysfonts)
+
+# Reset and re-add lato
+font_families()  # Check if lato is already registered
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(dplyr)
+library(treemap)
+library(cowplot)  # For combining plots
+library(grid)  # To add custom text
+
+library(ggplot2)
+library(dplyr)
+library(ggimage)
+
+```
+
+```{r reading_data4, include = FALSE, echo=FALSE}
+
+library(readxl)
+
+# Read in the data
+data <- read_excel("Teevial_Translated (1).xlsx")
+
+# Remove periods from all character columns
+data[] <- lapply(data, function(x) if (is.character(x)) gsub("\\.", "", x) else x)
+
+# Standardize "insufficient government support" regardless of case and placement
+data[] <- lapply(data, function(x) if (is.character(x)) 
+  gsub("(,?\\s*)insufficient government support", "\\1Insufficient government support", x, ignore.case = TRUE) else x)
+
+# Convert blanks or spaces-only values to NA
+data[] <- lapply(data, function(x) if (is.character(x)) na_if(trimws(x), "") else x)
+
+# Ensure that all empty values are NA explicitly
+data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_character_, x) else x)
+
+
+
+```
+
+
+
+```{r nature1, echo=FALSE, warning=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(ggimage)  # For inserting image markers
+
+# Sample size from actual data
+sample_size <- nrow(data)
+
+# Summarize data
+data_summary <- data %>%
+  group_by(`In the last 12 months, how often have you spent time outdoors, in green and natural environments?`) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))  # Ensure order is based on frequency
+
+# **Wrap x-axis labels at commas**
+data_summary <- data_summary %>%
+  mutate(wrapped_labels = str_replace_all(`In the last 12 months, how often have you spent time outdoors, in green and natural environments?`, ", ", ",\n"))
+
+# **Preserve factor order AFTER wrapping**
+data_summary$wrapped_labels <- factor(data_summary$wrapped_labels, 
+                                      levels = data_summary$wrapped_labels)
+
+# **Define tree image URL (replace with another image if needed)**
+tree_img <- "https://freesvg.org/img/Simple_Tree_3d_by_Merlin2525.png"
+
+# **Scaling for better visual contrast**
+min_size <- 0.1  # Smallest trees get even smaller
+max_size <- 0.9  # Largest trees stay reasonable
+data_summary <- data_summary %>%
+  mutate(tree_size = scales::rescale(count^(1/3), to = c(min_size, max_size)))  # **Cubic root scaling**
+
+# **Better tree placement to prevent overlap**
+y_base <- 2.5   # Lift base higher
+y_scale <- 4.0  # Increase spread for better separation
+data_summary <- data_summary %>%
+  mutate(y_position = pmax(y_base, y_base + (tree_size * y_scale)))  
+
+# **Ensure labels stay even further above trees**
+label_offset <- 8  # More spacing above trees
+data_summary <- data_summary %>%
+  mutate(label_position = y_position + (tree_size * 2.5) + label_offset)
+
+# **Create tree-based bar chart**
+outdoor_time <- ggplot(data_summary, 
+                       aes(x = wrapped_labels, y = count)) +
+
+  # Single tree per category, positioned and sized dynamically
+  ggimage::geom_image(aes(y = y_position, image = tree_img, size = I(tree_size)), 
+                      asp = 1.0) +  
+
+  # Percentage labels, always positioned above trees
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), y = label_position), 
+            size = 6, fontface = "bold") +
+
+  # **Expand x-axis to prevent tree cutoff**
+  scale_x_discrete(expand = expansion(mult = c(0.2, 0.2))) + 
+
+  # Adjust y-axis limits and remove extra spacing
+  scale_y_continuous(expand = expansion(mult = c(0, 0.5))) +
+
+  # Labels and title
+  labs(title = "Time Spent Outdoors Over the Last Year",
+       x = "Response", 
+       y = NULL,
+       caption = paste("Sample Size:", sample_size)) +
+
+  # Custom theme adjustments
+  theme_minimal() +
+  theme(
+    text = element_text(family = "lato"),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 14),
+    axis.text.y = element_blank(),  
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20),
+    axis.title.x = element_text(size = 15),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line.x = element_line(color = "black", size = 1),
+    plot.caption = element_text(vjust = 4, size = 10)
+  )
+
+# **Save as image with even more width**
+ggsave(file = "outdoor_time.jpeg", outdoor_time, width = 18, height = 14, dpi = 300)  # Increased width
+
+# Display the plot
+outdoor_time
+
+
+```
+
+```{r nature2, echo=FALSE, warning=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(waffle)  # Load the waffle package
+
+sample_size <- nrow(data)  # Calculate the sample size dynamically
+
+# Function to insert line breaks after every second word
+insert_line_breaks <- function(text, n = 2) {
+  words <- unlist(strsplit(text, " "))  # Split text into words
+  if (length(words) > n) {
+    text <- paste(words, collapse = " ")  # Reconstruct with spaces
+    text <- gsub(paste0("((\\S+\\s+){", n, "})"), "\\1\n", text, perl = TRUE)  # Insert line breaks
+  }
+  return(text)
+}
+
+# Calculate count and percentage
+data_summary <- data %>%
+  group_by(`What is the hydrographic object you have encountered in your community?`) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))  # Sort by count in descending order
+
+# Apply line breaks to long variable names
+data_summary$`What is the hydrographic object you have encountered in your community?` <- 
+  sapply(data_summary$`What is the hydrographic object you have encountered in your community?`, insert_line_breaks)
+
+# Convert responses to factor using actual order from data
+data_summary$`What is the hydrographic object you have encountered in your community?` <- 
+  factor(data_summary$`What is the hydrographic object you have encountered in your community?`, 
+         levels = data_summary$`What is the hydrographic object you have encountered in your community?`)
+
+# Prepare data for waffle plot
+waffle_data <- data_summary %>%
+  mutate(value = round(percentage)) %>%
+  select(`What is the hydrographic object you have encountered in your community?`, value)
+
+# Convert data to a named vector (with labels) for waffle plot
+waffle_values <- setNames(waffle_data$value, waffle_data$`What is the hydrographic object you have encountered in your community?`)
+
+# Define shades of blue for the plot
+blue_colors <- c("#2f4781","#4f64ac","#6f87c2", "#8faad8","#a6c8e5")
+
+# Create the waffle plot with shades of blue
+waffle_plot <- waffle(waffle_values, 
+                      rows = 5, 
+                      colors = blue_colors) +
+  ggtitle("Most Frequently Encountered Water Source") +
+  theme(
+    legend.position = "bottom", 
+    plot.title = element_text(size = 20, face = "bold", family = "lato", vjust = 4),  # Title with Lato font and space above the plot
+    legend.title = element_text(size = 15, family = "lato"),  # Increase legend title size
+    legend.text = element_text(size = 14, family = "lato"),  # Increase legend text size
+    plot.caption = element_text(size = 12, family = "lato")  # Adjust caption size if needed
+  ) +
+  guides(fill = guide_legend(title = "Water Source"))  # Add legend title manually
+
+# Save the waffle plot as an image
+ggsave(file = "hydro_object_waffle_blue.jpeg", waffle_plot, width = 15, height = 15, dpi = 300)
+
+# Display the waffle plot
+waffle_plot
+
+```
+
+When asked about the quality of natural water, again the majority responded positively, with 68.1% stating it is of acceptable quality.
+
+```{r nature3, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+sample_size <- nrow(data)  # Calculate the sample size dynamically
+
+# Function to insert line breaks after every second word
+insert_line_breaks <- function(text, n = 2) {
+  words <- unlist(strsplit(text, " "))  # Split text into words
+  if (length(words) > n) {
+    text <- paste(words, collapse = " ")  # Reconstruct with spaces
+    text <- gsub(paste0("((\\S+\\s+){", n, "})"), "\\1\n", text, perl = TRUE)  # Insert line breaks
+  }
+  return(text)
+}
+
+# Summarize and format data
+data_summary <- data %>%
+  group_by(`Is the natural water in your community safe? If it is dangerous, please indicate the main reason`) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))
+
+# Apply line breaks
+data_summary$`Is the natural water in your community safe? If it is dangerous, please indicate the main reason` <- 
+  sapply(data_summary$`Is the natural water in your community safe? If it is dangerous, please indicate the main reason`, insert_line_breaks)
+
+# Make responses factors for order
+data_summary$`Is the natural water in your community safe? If it is dangerous, please indicate the main reason` <- 
+  factor(data_summary$`Is the natural water in your community safe? If it is dangerous, please indicate the main reason`, 
+         levels = data_summary$`Is the natural water in your community safe? If it is dangerous, please indicate the main reason`)
+
+# Create bar chart
+water_safety <- ggplot(data_summary, aes(x = `Is the natural water in your community safe? If it is dangerous, please indicate the main reason`, y = count)) +
+  geom_bar(stat = "identity", fill = "#0073C2FF", alpha = 0.8) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), vjust = -0.75, size = 5, fontface = "bold") +  # Matched percentage label size
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +  # Slightly more vertical space above bars
+  theme_minimal() +
+  labs(title = "Is the Natural Water Safe in Your Community?",
+       x = "Response", 
+       y = "Count",
+       caption = paste("Sample Size:", sample_size)) +
+  theme(
+    text = element_text(family = "lato"),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 15),  # x-axis label size
+    axis.text.y = element_text(size = 15),  # y-axis label size
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20),  # title size
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line = element_line(color = "black", size = 1),
+    plot.caption = element_text(vjust = 4, size = 10),
+    plot.tag = element_text(size = 10),
+    plot.tag.position = c(0.89, 0)
+  )
+
+# Save the chart with extra vertical space
+ggsave(file = "water_safety.jpeg", plot = water_safety, width = 10, height = 12, dpi = 300)
+
+# Display the chart
+water_safety
+```
+
+
+The perception of cleanliness over time also points toward a satisfactory feeling, with 70.2% saying the water was either the same and 19.1% saying it had improved over the course of the past 5 years.
+
+```{r nature4, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+sample_size <- nrow(data)  # Calculate sample size dynamically
+
+# Column containing responses
+col_question <- "In your opinion, has the cleanliness or safety of natural water in your community improved, worsened, or remained about the same over the past 5 years?"
+
+# Aggregate response counts
+data_summary <- data %>%
+  group_by(response_category = !!sym(col_question)) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  ungroup()
+
+# Define perception categories
+data_summary$response_type <- case_when(
+  data_summary$response_category == "It has improved" ~ "positive",
+  data_summary$response_category == "It is the same" ~ "neutral",
+  data_summary$response_category == "It has gotten worse" ~ "negative",
+  TRUE ~ "neutral"  # Neutral for "I don't know/No opinion"
+)
+
+# Sort responses logically, including NA as the last category
+data_summary <- data_summary %>%
+  arrange(match(response_category, c("I don't know/No opinion", "It has gotten worse", "It is the same", "It has improved")))
+
+# Convert to factor for correct order (reverse order)
+data_summary$response_category <- factor(data_summary$response_category, 
+                                         levels = c("I don't know/No opinion", "It has gotten worse", 
+                                                    "It is the same", "It has improved"))
+
+# Diverging bar chart with updated styling
+water_cleanliness_trend <- ggplot(data_summary, aes(x = response_category, y = count, fill = response_type)) + 
+  geom_bar(stat = "identity", width = 0.7, alpha = 0.8) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), 
+            size = 5, fontface = "bold", family = "lato", color = "black", 
+            hjust = -0.1) +  # Puts percent labels to the right of bars
+  scale_fill_manual(values = c(
+    "positive" = "#00ba38",  # Green for improvements
+    "negative" = "#f8766d",  # Red for worsening
+    "neutral" = "#619CFF"    # Blue for neutral (same or no opinion)
+  ), guide = "none") +  # Remove legend
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +  # Adds 15% extra space on top
+  coord_flip() + 
+  theme_minimal() +
+  labs(title = "Perceived Changes in\nNatural Water Cleanliness & Safety",
+       x = "Response Category",
+       y = "Count",
+       caption = paste("Sample Size:", sample_size)) + 
+  theme(
+    text = element_text(family = "lato"),  
+    axis.text.x = element_text(size = 15),  
+    axis.text.y = element_text(size = 12),  
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20, family = "lato"),  
+    axis.title.x = element_text(size = 15),  
+    axis.title.y = element_blank(),  
+    panel.grid.major = element_blank(),  
+    panel.grid.minor = element_blank(),  
+    axis.line = element_line(color = "black", size = 1),  
+    plot.caption = element_text(vjust = 4, size = 10),  
+    plot.tag = element_text(size = 5),
+    plot.tag.position = c(0.89, 0)
+  )
+
+# Save the graphic for thesis insertion
+ggsave(file = "water_cleanliness_trend.jpeg", water_cleanliness_trend, width = 10, height = 10, dpi = 300)
+
+water_cleanliness_trend
+
+```
+

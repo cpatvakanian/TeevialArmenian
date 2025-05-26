@@ -1,0 +1,51 @@
+[
+  {
+    "objectID": "interests.html",
+    "href": "interests.html",
+    "title": "Interests",
+    "section": "",
+    "text": "The youth we surveyed were primarily concerned with the environment, limited access to quality education and negative stereotypes about rural life.\n\nMost Common Issues\nParticipants could select multiple answers\n\n\n\n\n\n\n\n\n\nThe majority were also interested in some form of youth advocacy, with only 11% reporting no interest in any of the activities listed.\n\n\nInterest in Volunteering Activities\nParticipants could select multiple answers\n\n\n\n\n\n\n\n\n\nAdditionally, 60% of participants would like to be engaged with Teevial in the future."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "Teevial was founded in 2024 by Aram Bagdasarian and Cristopher Patvakanian. Through their combined skills in youth activism and data science, they hope to create an organization that will help other young Armenians realize their potential and use data to drive meaningful change in their communities.\n\n\n\n\n\n\n\nAram Bagdassaryan\n\n\n\n\nAram Bagdasarian is a researcher and an upcoming data scientist. He is currently a sophomore at Harvard University, studying Government and Statistics. Aram is interested in understanding the pillars of ecological, scientific, and economic problems in Armenia through empirical research..\n\n\n\n\n\n\n\n\n\nCristopher Patvakanian\n\n\n\n\nCristopher Patvakanian is a data scientist, researcher, and writer originally from Boston, Massachusetts. He is a graduate of Harvard University’s Economics department and is passionate about using data to solve important problems of the world."
+  },
+  {
+    "objectID": "demographics.html",
+    "href": "demographics.html",
+    "title": "Demographics",
+    "section": "",
+    "text": "The total sample size of participants was 47 out of roughly 60 students who were in the target age/grade range for our pilot project.\nWith this group, we’re about 80% sure that our results are accurate within 5% of what we would find if every eligible student had participated, based on a standard sample size calculation.\nFor the purpose of a pilot project, we found this sample to be sufficient for our initial exploratory objective to have a rough understanding of the youth’s perception and sentiment of water quality.\n\nAge\nThe students who were surveyed in the high school ranged from grades 9-12, and their age spanned from 14 to 18 years old.\n\n\n\n\n\n\n\n\n\n\n\nLocation\nMost all participants were from Gyulagarak, with the exception of 2 students that commuted from the nearby villages of Pushkino and Hobartsi.\n\n\n\n\n\n\n\n\n\n\n\nGender\nThe balance of gender in our sample is slightly skewed, with 55% of our respondents being female."
+  },
+  {
+    "objectID": "waternature.html",
+    "href": "waternature.html",
+    "title": "Water in Nature",
+    "section": "",
+    "text": "With regard to natural water, almost all the students reported spending at least two days a week outside, and the most frequently encountered source of water was “River”.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nWhen asked about the quality of natural water, again the majority responded positively, with 68.1% stating it is of acceptable quality.\n\n\n\n\n\n\n\n\n\nThe perception of cleanliness over time also points toward a satisfactory feeling, with 70.2% saying the water was either the same and 19.1% saying it had improved over the course of the past 5 years."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Teevial Water Pilot Project",
+    "section": "",
+    "text": "In January 2025, Teevial conducted a pilot project at Gyulagarak High School in Lori, Armenia, to assess youth perceptions of water cleanliness and environmental issues in their community. This initiative aimed to collect data on local water quality perceptions, introduce students to data-driven problem-solving, and align with Teevial’s mission of engaging rural youth in evidence-based community improvement. The anonymized data for this project can be found in this spreadsheet and the code is located on this Github page."
+  },
+  {
+    "objectID": "index.html#key-findings",
+    "href": "index.html#key-findings",
+    "title": "Teevial Water Pilot Project",
+    "section": "Key Findings",
+    "text": "Key Findings"
+  },
+  {
+    "objectID": "waterhome.html",
+    "href": "waterhome.html",
+    "title": "Water in The Home",
+    "section": "",
+    "text": "The survey showed that most students (80.9%) do have access to piped water at home, and the majority did not apply any treatment to make that water safe. For those that did use treatments, 42% reported the primary method was boiling.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nOver the course of the past 5 years, 68% of students thought the cleanliness of drinking water had stayed the same and 25% reported that it improved. As a whole, the overwhelming majority of students had a positive perception of their home water quality and safety, which is a positive sign."
+  }
+]

@@ -1,0 +1,286 @@
+---
+title: "Teevial Water Pilot Project"
+---
+In January 2025, [Teevial](https://teevial.com) conducted a pilot project at Gyulagarak High School in Lori, Armenia, to assess youth perceptions of water cleanliness and environmental issues in their community. This initiative aimed to collect data on local water quality perceptions, introduce students to data-driven problem-solving, and align with Teevial’s mission of engaging rural youth in evidence-based community improvement. The anonymized data for this project can be found in this [spreadsheet](https://docs.google.com/spreadsheets/d/1o2KU1biNs_Z6OnDYHtzEK8xa9sHAsKA-/edit?usp=sharing&ouid=101354750474980222561&rtpof=true&sd=true) and the code is located on this [Github](https://github.com/cpatvakanian/Teevial) page.
+
+## **Key Findings**
+
+# 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(extrafont)
+library(showtext)
+
+#install.packages("showtext")
+#install.packages("sysfonts")
+
+library(showtext)
+library(sysfonts)
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(showtext)
+library(sysfonts)
+
+# Reset and re-add lato
+font_families()  # Check if lato is already registered
+
+font_add_google("lato", "lato")  # Re-register lato
+showtext_auto()  # Enable showtext
+
+library(dplyr)
+library(treemap)
+library(cowplot)  # For combining plots
+library(grid)  # To add custom text
+
+```
+
+```{r reading_data, include = FALSE}
+
+library(readxl)
+
+# Read in the data
+data <- read_excel("Teevial_Translated (1).xlsx")
+
+# Remove periods from all character columns
+data[] <- lapply(data, function(x) if (is.character(x)) gsub("\\.", "", x) else x)
+
+# Standardize "insufficient government support" regardless of case and placement
+data[] <- lapply(data, function(x) if (is.character(x)) 
+  gsub("(,?\\s*)insufficient government support", "\\1Insufficient government support", x, ignore.case = TRUE) else x)
+
+# Convert blanks or spaces-only values to NA
+data[] <- lapply(data, function(x) if (is.character(x)) na_if(trimws(x), "") else x)
+
+# Ensure that all empty values are NA explicitly
+data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_character_, x) else x)
+
+
+
+```
+
+### **Water in the Home**
+Most students (80.9%) reported having access to piped water at home, with a majority perceiving their drinking water as safe. Among those who treated their water, 42% relied on boiling. Over the past five years, 68% of students believed water quality remained stable, while 25% thought it had improved.
+
+```{r homewater12, echo=FALSE, warning=FALSE}
+
+
+# Sample size from actual data
+sample_size <- nrow(data)
+
+# Summarize data
+data_summary <- data %>%
+  group_by(`What is the main source of water for you and your household?`) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))
+
+# Maintain factor levels for order
+data_summary$`What is the main source of water for you and your household?` <- 
+  factor(data_summary$`What is the main source of water for you and your household?`, 
+         levels = data_summary$`What is the main source of water for you and your household?`)
+
+# Define droplet image URL
+droplet_img <- "https://labs.waterdata.usgs.gov/visualizations/23_chart_challenge/raindrop.png"
+
+# **Even Smaller Scaling: Cubic Root Function**
+min_size <- 0.025  # Smallest droplets get **even smaller**
+max_size <- 0.4  # Keep the biggest droplet size the same
+data_summary <- data_summary %>%
+  mutate(droplet_size = scales::rescale(count^(1/3), to = c(min_size, max_size)))  # **Cubic root for more contrast**
+
+# **Better droplet placement to prevent cutoff**
+y_base <- 1.5   # Higher base lift
+y_scale <- 2.2  # Increased spread for visual balance
+data_summary <- data_summary %>%
+  mutate(y_position = pmax(y_base, y_base + (droplet_size * y_scale)))  
+
+# **Ensure labels stay above droplets**
+label_offset <- 0.25  # More spacing above droplets
+data_summary <- data_summary %>%
+  mutate(label_position = y_position + (droplet_size * 2) + label_offset)
+
+# Create droplet-based bar chart
+watersource_plot <- ggplot(data_summary, 
+                           aes(x = `What is the main source of water for you and your household?`, 
+                               y = count)) +
+
+  # Single droplet per category, positioned and sized dynamically
+  ggimage::geom_image(aes(y = y_position, image = droplet_img, size = I(droplet_size)), 
+                      asp = 1.0) +  
+
+  # Percentage labels, always positioned above droplets
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), y = label_position), 
+            size = 7, fontface = "bold") +
+
+  # Adjust y-axis limits and remove extra spacing
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
+
+  # Labels and title
+  labs(title = "Main Water Source",
+       x = "Water Source", 
+       y = NULL,
+       caption = paste("Sample Size:", sample_size)) +
+
+  # Custom theme adjustments
+  theme_minimal() +
+  theme(
+    text = element_text(family = "lato"),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 15),
+    axis.text.y = element_blank(),  
+    plot.title = element_text(hjust = 0.5, face = "bold", family = "late", size = 20),
+    axis.title.x = element_text(size = 15),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line.x = element_line(color = "black", size = 1),
+    plot.caption = element_text(vjust = 4, size = 10)
+  )
+
+# Save as image
+watersource_plot
+
+
+
+```
+
+
+### **Demographics**
+The survey included 47 students from grades 9-12, primarily from Gyulagarak, with a few participants from nearby villages. The sample size provided a strong representation of the school’s student population.
+
+
+```{r location_treeplot2, echo = FALSE}
+
+# Summarize the data to count occurrences of each location
+data_filtered <- data %>%
+  group_by(Location) %>%
+  summarise(count = n())  # Count the occurrences of each location
+
+# Calculate percentage for each location
+data_filtered <- data_filtered %>%
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Create a label column, putting percentage directly next to the number (no commas)
+data_filtered$label <- paste(data_filtered$Location, 
+                             round(data_filtered$percentage, 1), "%", sep = " ")
+
+# Creating the actual treemap with your data
+library(treemap)
+library(grid)
+
+treemap_chart <- treemap(data_filtered,
+                         index = "label",
+                         vSize = "count",
+                         vColor = "percentage",
+                         type = "index",
+                         palette = "Pastel1",
+                         border.col = "black",
+                         border.lwds = 1,
+                         fontsize.labels = 6,
+                         fontcolor.labels = "black",
+                         fontface.labels = 1,
+                         bg.labels = "transparent",
+                         align.labels = c("center", "center"),
+                         overlap.labels = 0.5,
+                         inflate.labels = TRUE,
+                         lowerbound.cex.labels = .1,
+                         minSize = 75,
+                         
+                         # Remove automatic title completely
+                         title = "",  
+                         
+                         # Adjust treemap placement to leave more room for title
+                         vp = viewport(y = 0.50, height = 0.80)  
+)
+
+# Add a large custom title manually (shifted lower)
+grid.text("Participant Locations", 
+          x = 0.5, y = 0.96,  # Move it slightly lower to avoid cutting off
+          gp = gpar(fontsize = 22, fontface = "bold"))  # Keep the title bold
+
+```
+### **Natural Water Sources**
+The Dzoraget River was the most frequently encountered natural water source. The majority (68.1%) perceived natural water as acceptable in quality, with 70.2% believing its cleanliness had remained consistent or improved over time.
+```{r nature22, echo=FALSE, warning=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(waffle)  # Load the waffle package
+
+sample_size <- nrow(data)  # Calculate the sample size dynamically
+
+# Function to insert line breaks after every second word
+insert_line_breaks <- function(text, n = 2) {
+  words <- unlist(strsplit(text, " "))  # Split text into words
+  if (length(words) > n) {
+    text <- paste(words, collapse = " ")  # Reconstruct with spaces
+    text <- gsub(paste0("((\\S+\\s+){", n, "})"), "\\1\n", text, perl = TRUE)  # Insert line breaks
+  }
+  return(text)
+}
+
+# Calculate count and percentage
+data_summary <- data %>%
+  group_by(`What is the hydrographic object you have encountered in your community?`) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(percentage = count / sample_size * 100) %>%
+  arrange(desc(count))  # Sort by count in descending order
+
+# Apply line breaks to long variable names
+data_summary$`What is the hydrographic object you have encountered in your community?` <- 
+  sapply(data_summary$`What is the hydrographic object you have encountered in your community?`, insert_line_breaks)
+
+# Convert responses to factor using actual order from data
+data_summary$`What is the hydrographic object you have encountered in your community?` <- 
+  factor(data_summary$`What is the hydrographic object you have encountered in your community?`, 
+         levels = data_summary$`What is the hydrographic object you have encountered in your community?`)
+
+# Prepare data for waffle plot
+waffle_data <- data_summary %>%
+  mutate(value = round(percentage)) %>%
+  select(`What is the hydrographic object you have encountered in your community?`, value)
+
+# Convert data to a named vector (with labels) for waffle plot
+waffle_values <- setNames(waffle_data$value, waffle_data$`What is the hydrographic object you have encountered in your community?`)
+
+# Define shades of blue for the plot
+blue_colors <- c("#2f4781","#4f64ac","#6f87c2", "#8faad8","#a6c8e5")
+
+# Create the waffle plot with shades of blue
+waffle_plot <- waffle(waffle_values, 
+                      rows = 5, 
+                      colors = blue_colors) +
+  ggtitle("Most Frequently Encountered Water Source") +
+  theme(
+    legend.position = "bottom", 
+    plot.title = element_text(size = 20, face = "bold", family = "lato", vjust = 4),  # Title with Lato font and space above the plot
+    legend.title = element_text(size = 15, family = "lato"),  # Increase legend title size
+    legend.text = element_text(size = 14, family = "lato"),  # Increase legend text size
+    plot.caption = element_text(size = 12, family = "lato")  # Adjust caption size if needed
+  ) +
+  guides(fill = guide_legend(title = "Water Source"))  # Add legend title manually
+
+# Save the waffle plot as an image
+ggsave(file = "hydro_object_waffle_blue.jpeg", waffle_plot, width = 15, height = 15, dpi = 300)
+
+# Display the waffle plot
+waffle_plot
+
+
+
+```
+### **Community Interests and Concerns**
+
+Students highlighted environmental issues, limited access to quality education, and rural stereotypes as primary concerns. Youth advocacy interest was strong, with 60% expressing a desire for continued engagement with Teevial.
+
+#### **Most Common Issues**
+*Participants could select multiple answers*
+```{r concerns122, echo=FALSE}
+knitr::include_graphics("concern.jpeg")
+```
+
