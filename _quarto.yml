@@ -6,11 +6,15 @@ website:
     logo: "teevial.svg"
     left:
       - href: index.qmd
-        text: Introduction
-      - demographics.qmd
-      - waterhome.qmd
-      - waternature.qmd
-      - interests.qmd
+        text: Ներածություն
+      - href: demographics.qmd
+        text: Ժողովրդագրություն
+      - href: waterhome.qmd
+        text: Ջուրը տանը
+      - href: waternature.qmd
+        text: Ջուրը բնության մեջ
+      - href: interests.qmd
+        text: Հետաքրքրություններ
 
 format:
   html:

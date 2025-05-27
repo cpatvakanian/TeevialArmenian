@@ -1,7 +1,8 @@
 ---
-title: "Interests"
+title: "Հետաքրքրություններ"
 ---
-The youth we surveyed were primarily concerned with the environment, limited access to quality education and negative stereotypes about rural life. 
+Մեր հարցմանը մասնակցած երիտասարդների հիմնական մտահոգությունները վերաբերել են շրջակա միջավայրի խնդիրներին, որակյալ կրթության սահմանափակ հասանելիությանը և գյուղական կյանքի վերաբերյալ տարածված բացասական ստերեոտիպերին։
+
 
 ```{r setup5, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -63,86 +64,31 @@ data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_chara
 
 ```
 
-# Most Common Issues
-*Participants could select multiple answers*
+# Ամենատարածված խնդիրները
+
+*Մասնակիցներին թույլատրվում էր ընտրել մի քանի տարբերակ*
 ```{r concerns12, echo=FALSE}
-knitr::include_graphics("concern.jpeg")
+knitr::include_graphics("concernArmenian.jpeg")
+
 ```
 
-The majority were also interested in some form of youth advocacy, with only 11% reporting no interest in any of the activities listed. 
+Բացի այդ, մեծամասնությունը հետաքրքրված էր որևէ ձևով երիտասարդական պաշտպանությամբ և հանրային ներգրավմամբ։ Միայն 11%-ն էր նշել, որ որևէ հետաքրքրություն չունի առաջարկված գործունեություններից որևէ մեկի նկատմամբ։
 
-# Interest in Volunteering Activities
-*Participants could select multiple answers*
+# Կամավորական գործունեության նկատմամբ հետաքրքրություն
+
+*Մասնակիցներին թույլատրվում էր ընտրել մի քանի տարբերակ*
 ```{r concerns22, echo=FALSE}
-knitr::include_graphics("Job1.jpeg")
+knitr::include_graphics("InterestsArmenian.jpeg")
+
 ```
 
 
 
-Additionally,  60%  of participants would like to be engaged with Teevial in the future.
-
+Բացի այդ, մասնակիցների 60%-ը հայտնել է ցանկություն՝ ապագայում համագործակցել Teevial-ի հետ։
 ```{r interest, echo=FALSE, warning=FALSE}
-library(ggplot2)
-library(dplyr)
 
-sample_size <- nrow(data)  # Calculate the sample size dynamically
 
-# Function to insert line breaks after every second word
-insert_line_breaks <- function(text, n = 2) {
-  words <- unlist(strsplit(text, " "))  # Split text into words
-  if (length(words) > n) {
-    text <- paste(words, collapse = " ")  # Reconstruct with spaces
-    text <- gsub(paste0("((\\S+\\s+){", n, "})"), "\\1\n", text, perl = TRUE)  # Insert line breaks
-  }
-  return(text)
-}
-
-# Calculate the count and percentage of each response
-data_summary <- data %>%
-  group_by(`Would you like to receive news from Teevial and participate in future surveys, events, and trainings?`) %>%
-  summarise(count = n()) %>%
-  mutate(percentage = count / sample_size * 100) %>%
-  arrange(desc(count))  # Sort by count in descending order
-
-# Apply line breaks to long variable names
-data_summary$`Would you like to receive news from Teevial and participate in future surveys, events, and trainings?` <- 
-  sapply(data_summary$`Would you like to receive news from Teevial and participate in future surveys, events, and trainings?`, insert_line_breaks)
-
-# Make the response column a factor to control the order
-data_summary$`Would you like to receive news from Teevial and participate in future surveys, events, and trainings?` <- 
-  factor(data_summary$`Would you like to receive news from Teevial and participate in future surveys, events, and trainings?`, 
-         levels = data_summary$`Would you like to receive news from Teevial and participate in future surveys, events, and trainings?`)
-
-# Create the bar chart with updated sizes
-teevial_news_plot <- ggplot(data_summary, aes(x = `Would you like to receive news from Teevial and participate in future surveys, events, and trainings?`, y = count)) +
-  geom_bar(stat = "identity", fill = "#0073C2FF", alpha = 0.8) +
-  geom_text(aes(label = paste0(round(percentage, 1), "%")), vjust = -0.75, size = 5, fontface = "bold") +
-  theme_minimal() +
-  labs(title = "Interest in Engaging with Teevial",
-       x = "Response", 
-       y = "Count",
-       caption = paste("Sample Size:", sample_size)) +
-  ylim(0, max(data_summary$count) * 1.1) +
-  theme(
-    text = element_text(family = "lato"),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
-    axis.text.y = element_text(size = 15),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 20),
-    axis.title.x = element_text(size = 15),
-    axis.title.y = element_text(size = 15),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.line = element_line(color = "black", size = 1),
-    plot.caption = element_text(vjust = 4, size = 10),
-    plot.tag = element_text(size = 10),
-    plot.tag.position = c(0.89, 0)
-  )
-
-# Save the chart
-ggsave(file = "teevial_news_plot.jpeg", plot = teevial_news_plot, width = 10, height = 7, dpi = 300)
-
-teevial_news_plot
-
+knitr::include_graphics("FinalChart.jpeg")
 
 ```
 

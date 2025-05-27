@@ -1,14 +1,22 @@
 ---
-title: "Teevial Water Pilot Project"
+title: "Teevial ջրի փորձնական նախագիծ"
 ---
-In January 2025, [Teevial](https://teevial.com) conducted a pilot project at Gyulagarak High School in Lori, Armenia, to assess youth perceptions of water cleanliness and environmental issues in their community. This initiative aimed to collect data on local water quality perceptions, introduce students to data-driven problem-solving, and align with Teevial’s mission of engaging rural youth in evidence-based community improvement. The anonymized data for this project can be found in this [spreadsheet](https://docs.google.com/spreadsheets/d/1o2KU1biNs_Z6OnDYHtzEK8xa9sHAsKA-/edit?usp=sharing&ouid=101354750474980222561&rtpof=true&sd=true) and the code is located on this [Github](https://github.com/cpatvakanian/Teevial) page.
+2025 թվականի հունվարին [Teevial](https://teevial.com)  մկազմակերպությունը իրականացրեց փորձնական նախագիծ Լոռու մարզի Գյուլագարակ գյուղի միջնակարգ դպրոցում՝ ուսումնասիրելու համայնքում երիտասարդների ընկալումները ջրի մաքրության և շրջակա միջավայրի խնդիրների վերաբերյալ։ Նախաձեռնության նպատակն էր հավաքել տվյալներ տեղական ջրի որակի ընկալումների վերաբերյալ, աշակերտներին ծանոթացնել տվյալահեն խնդիրների վերլուծության մեթոդներին և համադրել այս աշխատանքը Teevial-ի  աաքելության հետ՝ ոգեշնչել գյուղաբնակ երիտասարդներին ներգրավվելու ապացույցների վրա հիմնված համայնքային բարեփոխումներին։
 
-## **Key Findings**
+Նախագծի անանունացված տվյալները հասանելի են հետևյալ աղյուսակում, իսկ համապատասխան կոդը տեղադրված է այս [Github](https://github.com/cpatvakanian/TeevialArmenian) էջում:
+
+## **Հիմնական բացահայտումներ**
 
 # 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# Install and load showtext if needed
+if (!require("showtext")) install.packages("showtext")
+library(showtext)
 
+# Add Armenian-friendly font (Noto Sans Armenian) from Google Fonts
+font_add_google("Noto Sans Armenian", "noto_arm")
+showtext_auto()
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
@@ -37,6 +45,8 @@ library(dplyr)
 library(treemap)
 library(cowplot)  # For combining plots
 library(grid)  # To add custom text
+library(ggplot2)
+library(ggimage)
 
 ```
 
@@ -64,223 +74,116 @@ data[] <- lapply(data, function(x) if (is.character(x)) ifelse(x == "", NA_chara
 
 ```
 
-### **Water in the Home**
-Most students (80.9%) reported having access to piped water at home, with a majority perceiving their drinking water as safe. Among those who treated their water, 42% relied on boiling. Over the past five years, 68% of students believed water quality remained stable, while 25% thought it had improved.
-
+### **Ջուրը տանը**
+Ուսանողների մեծ մասը (80.9%) նշել է, որ տանը հասանելիություն ունի խողովակաշարային ջրին, ընդ որում՝ մեծամասնությունը խմելու ջուրը համարում է անվտանգ: Ջուրը մաքրածների 42%-ը օգտագործել է եռացող ջուր: Վերջին հինգ տարիների ընթացքում ուսանողների 68%-ը կարծում է, որ ջրի որակը մնացել է կայուն, մինչդեռ 25%-ը կարծում է, որ այն բարելավվել է:
 ```{r homewater12, echo=FALSE, warning=FALSE}
-
 
 # Sample size from actual data
 sample_size <- nrow(data)
 
-# Summarize data
+# Summarize data and create wrapped label
 data_summary <- data %>%
   group_by(`What is the main source of water for you and your household?`) %>%
-  summarise(count = n()) %>%
-  mutate(percentage = count / sample_size * 100) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(
+    percentage = count / sample_size * 100,
+    source_label = str_wrap(`What is the main source of water for you and your household?`, width = 10)
+  ) %>%
   arrange(desc(count))
 
-# Maintain factor levels for order
-data_summary$`What is the main source of water for you and your household?` <- 
-  factor(data_summary$`What is the main source of water for you and your household?`, 
-         levels = data_summary$`What is the main source of water for you and your household?`)
+data_summary$source_label <- factor(data_summary$source_label, levels = data_summary$source_label)
 
-# Define droplet image URL
+# Droplet image
 droplet_img <- "https://labs.waterdata.usgs.gov/visualizations/23_chart_challenge/raindrop.png"
 
-# **Even Smaller Scaling: Cubic Root Function**
-min_size <- 0.025  # Smallest droplets get **even smaller**
-max_size <- 0.4  # Keep the biggest droplet size the same
+# Scaling droplet size
+min_size <- 0.025
+max_size <- 0.4
 data_summary <- data_summary %>%
-  mutate(droplet_size = scales::rescale(count^(1/3), to = c(min_size, max_size)))  # **Cubic root for more contrast**
+  mutate(droplet_size = scales::rescale(count^(1/3), to = c(min_size, max_size)))
 
-# **Better droplet placement to prevent cutoff**
-y_base <- 1.5   # Higher base lift
-y_scale <- 2.2  # Increased spread for visual balance
+# Positioning
+y_base <- 1.5
+y_scale <- 2.2
 data_summary <- data_summary %>%
-  mutate(y_position = pmax(y_base, y_base + (droplet_size * y_scale)))  
-
-# **Ensure labels stay above droplets**
-label_offset <- 0.25  # More spacing above droplets
-data_summary <- data_summary %>%
-  mutate(label_position = y_position + (droplet_size * 2) + label_offset)
-
-# Create droplet-based bar chart
-watersource_plot <- ggplot(data_summary, 
-                           aes(x = `What is the main source of water for you and your household?`, 
-                               y = count)) +
-
-  # Single droplet per category, positioned and sized dynamically
-  ggimage::geom_image(aes(y = y_position, image = droplet_img, size = I(droplet_size)), 
-                      asp = 1.0) +  
-
-  # Percentage labels, always positioned above droplets
-  geom_text(aes(label = paste0(round(percentage, 1), "%"), y = label_position), 
-            size = 7, fontface = "bold") +
-
-  # Adjust y-axis limits and remove extra spacing
-  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
-
-  # Labels and title
-  labs(title = "Main Water Source",
-       x = "Water Source", 
-       y = NULL,
-       caption = paste("Sample Size:", sample_size)) +
-
-  # Custom theme adjustments
-  theme_minimal() +
-  theme(
-    text = element_text(family = "lato"),
-    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 15),
-    axis.text.y = element_blank(),  
-    plot.title = element_text(hjust = 0.5, face = "bold", family = "late", size = 20),
-    axis.title.x = element_text(size = 15),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.line.x = element_line(color = "black", size = 1),
-    plot.caption = element_text(vjust = 4, size = 10)
+  mutate(
+    y_position = pmax(y_base, y_base + droplet_size * y_scale),
+    label_offset = 0.25,
+    label_position = y_position + droplet_size * 2 + label_offset
   )
 
-# Save as image
+
+# Create plot with two caption text layers
+watersource_plot <- ggplot(data_summary, aes(x = source_label, y = count)) +
+  ggimage::geom_image(aes(y = y_position, image = droplet_img, size = I(droplet_size)), asp = 1.0) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), y = label_position), 
+            size = 7, fontface = "bold", family = "lato") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
+  labs(
+    title = "Հիմնական ջրի աղբյուր",
+    x = "Ջրի աղբյուր",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 15, family = "noto_arm"),
+    axis.text.y = element_blank(),
+    plot.title = element_text(hjust = 0.5, face = "bold", family = "noto_arm", size = 20),
+    axis.title.x = element_text(size = 15, family = "noto_arm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line.x = element_line(color = "black", size = 1)
+  ) +
+  # Add caption layers manually for Armenian + numbers
+  annotation_custom(
+    grob = grid::textGrob(
+      label = "Նմուշի չափը", 
+      x = unit(0.99, "npc"), y = unit(-0.05, "npc"), 
+      just = c("right", "bottom"), 
+      gp = grid::gpar(fontfamily = "noto_arm", fontsize = 10)
+    )
+  ) +
+  annotation_custom(
+    grob = grid::textGrob(
+      label = as.character(sample_size), 
+      x = unit(0.999, "npc"), y = unit(-0.05, "npc"), 
+      just = c("right", "bottom"), 
+      gp = grid::gpar(fontfamily = "lato", fontsize = 10)
+    )
+  )
+
+# Display the plot
 watersource_plot
 
 
-
 ```
 
 
-### **Demographics**
-The survey included 47 students from grades 9-12, primarily from Gyulagarak, with a few participants from nearby villages. The sample size provided a strong representation of the school’s student population.
+### **Ժողովրդագրական տվյալներ**
+Հարցմանը մասնակցել են 47 աշակերտներ՝ հիմնականում Գյուլագարակ գյուղից, ինչպես նաև հարակից գյուղերից մի քանիսից։ Նմուշը լավ պատկերացում է տալիս դպրոցի սովորողների ընդհանուր կազմի մասին։
 
 
 ```{r location_treeplot2, echo = FALSE}
-
-# Summarize the data to count occurrences of each location
-data_filtered <- data %>%
-  group_by(Location) %>%
-  summarise(count = n())  # Count the occurrences of each location
-
-# Calculate percentage for each location
-data_filtered <- data_filtered %>%
-  mutate(percentage = (count / sum(count)) * 100)
-
-# Create a label column, putting percentage directly next to the number (no commas)
-data_filtered$label <- paste(data_filtered$Location, 
-                             round(data_filtered$percentage, 1), "%", sep = " ")
-
-# Creating the actual treemap with your data
-library(treemap)
-library(grid)
-
-treemap_chart <- treemap(data_filtered,
-                         index = "label",
-                         vSize = "count",
-                         vColor = "percentage",
-                         type = "index",
-                         palette = "Pastel1",
-                         border.col = "black",
-                         border.lwds = 1,
-                         fontsize.labels = 6,
-                         fontcolor.labels = "black",
-                         fontface.labels = 1,
-                         bg.labels = "transparent",
-                         align.labels = c("center", "center"),
-                         overlap.labels = 0.5,
-                         inflate.labels = TRUE,
-                         lowerbound.cex.labels = .1,
-                         minSize = 75,
-                         
-                         # Remove automatic title completely
-                         title = "",  
-                         
-                         # Adjust treemap placement to leave more room for title
-                         vp = viewport(y = 0.50, height = 0.80)  
-)
-
-# Add a large custom title manually (shifted lower)
-grid.text("Participant Locations", 
-          x = 0.5, y = 0.96,  # Move it slightly lower to avoid cutting off
-          gp = gpar(fontsize = 22, fontface = "bold"))  # Keep the title bold
+knitr::include_graphics("TreeMap.jpeg")
 
 ```
-### **Natural Water Sources**
-The Dzoraget River was the most frequently encountered natural water source. The majority (68.1%) perceived natural water as acceptable in quality, with 70.2% believing its cleanliness had remained consistent or improved over time.
+### **Բնական ջրաղբյուրներ**
+Ամենաշատ նշված բնական ջրաղբյուրը Ձորագետ գետն էր։ Մասնակիցների մեծամասնությունը (68.1%) կարծում էր, որ բնական ջուրը բավարար որակի է, իսկ 70.2%-ը նշել էր, որ այն մաքուր է մնացել կամ բարելավվել ժամանակի ընթացքում։
+
 ```{r nature22, echo=FALSE, warning=FALSE}
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(stringr)
-library(waffle)  # Load the waffle package
 
-sample_size <- nrow(data)  # Calculate the sample size dynamically
-
-# Function to insert line breaks after every second word
-insert_line_breaks <- function(text, n = 2) {
-  words <- unlist(strsplit(text, " "))  # Split text into words
-  if (length(words) > n) {
-    text <- paste(words, collapse = " ")  # Reconstruct with spaces
-    text <- gsub(paste0("((\\S+\\s+){", n, "})"), "\\1\n", text, perl = TRUE)  # Insert line breaks
-  }
-  return(text)
-}
-
-# Calculate count and percentage
-data_summary <- data %>%
-  group_by(`What is the hydrographic object you have encountered in your community?`) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  mutate(percentage = count / sample_size * 100) %>%
-  arrange(desc(count))  # Sort by count in descending order
-
-# Apply line breaks to long variable names
-data_summary$`What is the hydrographic object you have encountered in your community?` <- 
-  sapply(data_summary$`What is the hydrographic object you have encountered in your community?`, insert_line_breaks)
-
-# Convert responses to factor using actual order from data
-data_summary$`What is the hydrographic object you have encountered in your community?` <- 
-  factor(data_summary$`What is the hydrographic object you have encountered in your community?`, 
-         levels = data_summary$`What is the hydrographic object you have encountered in your community?`)
-
-# Prepare data for waffle plot
-waffle_data <- data_summary %>%
-  mutate(value = round(percentage)) %>%
-  select(`What is the hydrographic object you have encountered in your community?`, value)
-
-# Convert data to a named vector (with labels) for waffle plot
-waffle_values <- setNames(waffle_data$value, waffle_data$`What is the hydrographic object you have encountered in your community?`)
-
-# Define shades of blue for the plot
-blue_colors <- c("#2f4781","#4f64ac","#6f87c2", "#8faad8","#a6c8e5")
-
-# Create the waffle plot with shades of blue
-waffle_plot <- waffle(waffle_values, 
-                      rows = 5, 
-                      colors = blue_colors) +
-  ggtitle("Most Frequently Encountered Water Source") +
-  theme(
-    legend.position = "bottom", 
-    plot.title = element_text(size = 20, face = "bold", family = "lato", vjust = 4),  # Title with Lato font and space above the plot
-    legend.title = element_text(size = 15, family = "lato"),  # Increase legend title size
-    legend.text = element_text(size = 14, family = "lato"),  # Increase legend text size
-    plot.caption = element_text(size = 12, family = "lato")  # Adjust caption size if needed
-  ) +
-  guides(fill = guide_legend(title = "Water Source"))  # Add legend title manually
-
-# Save the waffle plot as an image
-ggsave(file = "hydro_object_waffle_blue.jpeg", waffle_plot, width = 15, height = 15, dpi = 300)
-
-# Display the waffle plot
-waffle_plot
+knitr::include_graphics("WaffleMap.jpeg")
 
 
 
 ```
-### **Community Interests and Concerns**
+### **Համայնքային հետաքրքրություններ և մտահոգություններ**
 
-Students highlighted environmental issues, limited access to quality education, and rural stereotypes as primary concerns. Youth advocacy interest was strong, with 60% expressing a desire for continued engagement with Teevial.
+Աշակերտները կարևորել են շրջակա միջավայրի խնդիրները, որակյալ կրթության սահմանափակ հասանելիությունը և գյուղաբնակ լինելու հետ կապված ստերեոտիպերը։ Երիտասարդների ակտիվության պատրաստակամությունը բարձր էր՝ 60%-ը հայտնել էր Teevial-ի հետ շարունակական համագործակցության ցանկություն։
 
-#### **Most Common Issues**
-*Participants could select multiple answers*
+#### **Ամենատարածված խնդիրները**
+*Մասնակիցները կարող էին նշել մի քանի տարբերակ*
 ```{r concerns122, echo=FALSE}
-knitr::include_graphics("concern.jpeg")
+knitr::include_graphics("concernArmenian.jpeg")
 ```
 
