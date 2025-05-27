@@ -1,1 +1,1 @@
-Sitemap: https://cpatvakanian.quarto.pub/teevialarmenian/sitemap.xml
+Sitemap: https://cpatvakanian.github.io/TeevialArmenian/sitemap.xml
