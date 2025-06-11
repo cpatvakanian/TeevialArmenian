@@ -1,9 +1,28 @@
 /* css styles */
 .quarto-title-block .quarto-title-banner {
-  background-image: url(teevial.jpg);
+  background-image: url(teevial1.jpg);
   background-size: 300px;
   background-position: left;
   background-repeat: no-repeat;
   padding-left: 10px;
   background-origin: content-box;
+}
+
+
+
+/* Change the navbar (banner) background color */
+.navbar {
+  background-color: #000064; /* Replace with your desired color */
+}
+
+/* Change the navbar text (font) color */
+.navbar .navbar-brand,
+.navbar .nav-link {
+  color: #ffffff !important; /* Replace with your desired font color */
+}
+
+/* Optional: Change hover/focus color of navbar items */
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  color: #cccccc !important;
 }
