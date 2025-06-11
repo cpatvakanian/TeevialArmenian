@@ -3,7 +3,7 @@ project:
 
 website:
   navbar:
-    logo: "teevial.svg"
+    logo: "teevial.jpg"
     left:
       - href: index.qmd
         text: Ներածություն
@@ -20,6 +20,7 @@ format:
   html:
     theme: cosmo
       - fonts.css  # Custom font stylesheet
+      
     css: styles.css
     toc: false
 
