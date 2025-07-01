@@ -3,9 +3,9 @@ project:
 
 website:
   navbar:
-    title: false                     # Optional: hides default Quarto title
-    logo: teevial.jpg               # ✅ Logo image file
-    logo-href: https://teevial.com  # ✅ External link for logo
+    logo:
+      image: "teevial.jpg"
+      href: "https://teevial.com"
     left:
       - href: index.qmd
         text: Ներածություն
@@ -20,8 +20,8 @@ website:
 
 format:
   html:
-    theme: 
-      - cosmo
-      - fonts.css             # ✅ Custom fonts
-    css: styles.css
+    theme: cosmo
+    css:
+      - fonts.css
+      - styles.css
     toc: false
