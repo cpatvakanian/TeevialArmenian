@@ -4,6 +4,7 @@ project:
 website:
   navbar:
     logo: "teevial.jpg"
+    logo-href: "teevial.com"
     left:
       - href: index.qmd
         text: Ներածություն
