@@ -3,9 +3,8 @@ project:
 
 website:
   navbar:
-    logo:
-      image: "teevial.jpg"
-      href: "https://teevial.com"
+    logo: "teevial.jpg"        # just the image path as a string
+    logo-href: "https://teevial.com"  # link for the logo
     left:
       - href: index.qmd
         text: Ներածություն
